@@ -46,7 +46,7 @@ resource "google_monitoring_alert_policy" "alert_policy" {
       }
       aggregations {
         alignment_period   = "1200s"
-        per_series_aligner = "ALIGN_SUM"
+        per_series_aligner = "ALIGN_NONE"
         cross_series_reducer = "REDUCE_SUM"       
       }
     }
