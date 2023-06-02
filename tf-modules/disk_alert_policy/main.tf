@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TF module that creates a sample cpu alert policy.
+# TF module that creates a sample disk usage alert using a Pubsub channel.
 
-# Create a Pubsub channel.
+# Creates a Pubsub channel for the alerting policy.
 module "pubsub_channel" {
   source                  = "../../tf-modules/pubsub_channel"
 
@@ -25,34 +25,30 @@ module "pubsub_channel" {
   push_subscription = var.push_subscription
 }
 
-# Create a sample alert policy with the Cloud Pubsub notification channel.
+# Creates an alert policy with a Cloud Pubsub notification channel
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/monitoring_alert_policy
 resource "google_monitoring_alert_policy" "alert_policy" {
-  display_name = "teste-1: ${var.topic}"
-  documentation {
-    content = "Teste abc"
-    mime_type = "text/markdown"
-  }
+  display_name = "Sample Alert Policy: ${var.topic}"
   combiner     = "OR"
   conditions {
     display_name = "test condition"
     condition_threshold {
-      filter     = "resource.type = \"uptime_url\" AND metric.type = \"monitoring.googleapis.com/uptime_check/check_passed\" AND metric.labels.check_id = \"15553888004891815183\""
-      duration   = "0s"
-      comparison = "COMPARISON_GT"
-      threshold_value = 0
+      filter     = "metric.type=\"compute.googleapis.com/instance/disk/read_bytes_count\" AND resource.type=\"gce_instance\""
+      duration   = "60s"
+      comparison = "COMPARISON_LT"
+      threshold_value = 1048576  # 1024 * 1024 bytes
       trigger {
         count = 1
       }
       aggregations {
-        alignment_period   = "1200s"
+        alignment_period   = "60s"
         per_series_aligner = "ALIGN_SUM"
         cross_series_reducer = "REDUCE_SUM"       
       }
     }
   }
   user_labels = {
-    severity = "p1"
+    severity = "p0"
   }
   notification_channels =[module.pubsub_channel.notif_channel]
 }
